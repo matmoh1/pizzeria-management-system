@@ -1,0 +1,202 @@
+﻿@page "/jobs"
+
+@using DataAccess
+@using MargheritaPub.Data
+
+@inject IMySQLDataAccess _data
+@inject IConfiguration _config
+
+
+<div class="container">
+
+    <h3>Oferty pracy</h3>
+
+    <section>
+        @if (jobs == null)
+        {
+            <p><em>Aktualnie nie ma żadnych ofert pracy</em></p>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead style="background-color:#141e5e; color:white;">
+                <th></th>
+                <th>Tytył</th>
+                <th>Opis</th>
+                <th>Usuń</th>
+                </thead>
+                <tbody>
+                    @foreach (var j in jobs)
+                    {
+                        <tr>
+                            <td>PL</td>
+                            <td>@j.TitlePL</td>
+                            <td>@j.DescriptionPL</td>
+                            <td rowspan="2">
+                                <span id="deleteJob" @onclick="() => DeleteJob(j.Id)" class="oi oi-x align-content-xl-around me-3" style="cursor: pointer;"></span>
+                                <span id="editJob" class="oi oi-pencil" @onclick="() => EditJob(j.Id)" style="cursor: pointer;"></span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>EN</td>
+                            <td>@j.TitleEN</td>
+                            <td>@j.DescriptionEN</td>
+                        </tr>
+                        
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    
+    
+    <section>
+        @if (createStatus)
+        {
+            <h3>Dodaj ofertę pracy</h3>
+            <EditForm Model="@usingJob" OnValidSubmit="@InsertJob">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="mb-3">
+                    <label for="nameEN" class="form-label">Tytuł po angielsku</label>
+                    <input type="text" class="form-control" id="nameEN" @bind-value="usingJob.TitleEN" required>
+                </div>
+                <div class="mb-3">
+                    <label for="namePL" class="form-label">Tytuł po polsku</label>
+                    <input type="text" class="form-control" id="namePL" @bind-value="usingJob.TitlePL" required>
+                </div>
+                <div class="mb-3">
+                    <label for="DescriptionEN" class="form-label">Opis po angielsku</label>
+                    <input type="text" class="form-control" id="DescriptionEN" @bind-value="usingJob.DescriptionEN" required>
+                </div>
+                <div class="mb-3">
+                    <label for="DescriptionPL" class="form-label">Opis po polsku</label>
+                    <input type="text" class="form-control" id="DescriptionEN" @bind-value="usingJob.DescriptionPL" required>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn alert-primary mt-3">Dodaj</button>
+                </div>
+            </EditForm>
+        }
+    </section>
+
+    <section>
+        @if (editStatus)
+        {
+            <h3>Edytuj pozycję w menu</h3>
+            <EditForm Model="@usingJob" OnValidSubmit="@UpdateJob">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="mb-3">
+                    <label for="nameEN" class="form-label">Tytuł po angielsku</label>
+                    <input type="text" class="form-control" id="nameEN" @bind-value="usingJob.TitleEN" required>
+                </div>
+                <div class="mb-3">
+                    <label for="namePL" class="form-label">Tytuł po polsku</label>
+                    <input type="text" class="form-control" id="namePL" @bind-value="usingJob.TitlePL" required>
+                </div>
+                <div class="mb-3">
+                    <label for="DescriptionEN" class="form-label">Opis po angielsku</label>
+                    <input type="text" class="form-control" id="DescriptionEN" @bind-value="usingJob.DescriptionEN" required>
+                </div>
+                <div class="mb-3">
+                    <label for="DescriptionPL" class="form-label">Opis po polsku</label>
+                    <input type="text" class="form-control" id="DescriptionEN" @bind-value="usingJob.DescriptionPL" required>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn alert-primary mt-3">Edytuj</button>
+                </div>
+            </EditForm>
+        }
+    </section>
+    <br />
+</div>
+
+@code {
+    bool createStatus = true;
+    bool editStatus = false;
+    int jobBeingEdited;
+    string dbErrorMessage = ""; // error message for db delete exception
+
+    List<Job> jobs;
+    List<Job> selectedJob;
+
+    private Job usingJob = new Job();
+
+    protected override async Task OnInitializedAsync()
+    {
+        string sql = "SELECT * FROM job";
+        jobs = await _data.LoadData<Job, dynamic>(sql, new { }, _config.GetConnectionString("MySQLConnection"));
+    }
+
+    private async Task DeleteJob(int id)
+    {
+        string sql = "DELETE FROM job WHERE id = @Id";
+        try
+        {
+            await _data.SaveData(sql, new { id = id }, _config.GetConnectionString("MySqlConnection"));
+            await OnInitializedAsync();
+        }
+        catch(Exception ex)
+        {
+            dbErrorMessage = ex.ToString();
+        }
+    }
+
+    private async Task InsertJob()
+    {
+        Job j = new Job
+        {
+            TitleEN = usingJob.TitleEN,
+            TitlePL = usingJob.TitlePL,
+            DescriptionEN = usingJob.DescriptionEN,
+            DescriptionPL = usingJob.DescriptionPL,
+        };
+
+        string sql = "INSERT INTO job (titleEN, titlePL, descriptionEN, descriptionPL) VALUES (@TitleEN, @TitlePL, @DescriptionEN, @DescriptionPL);";
+        await _data.SaveData(sql, j, _config.GetConnectionString("MySqlConnection"));
+        await OnInitializedAsync();
+        j = new Job();
+        usingJob = new Job();
+    }
+
+        private async Task EditJob(int id)
+    {
+        createStatus = false;
+        editStatus = true;
+
+        string sql = "SELECT * FROM job WHERE Id = @Id";
+        selectedJob = await _data.LoadData<Job, dynamic>(sql, new { Id = id }, _config.GetConnectionString("MySQLConnection"));
+        jobBeingEdited = id;
+
+        usingJob.TitleEN = selectedJob[0].TitleEN;
+        usingJob.TitlePL = selectedJob[0].TitlePL;
+        usingJob.DescriptionEN = selectedJob[0].DescriptionEN;
+        usingJob.DescriptionPL = selectedJob[0].DescriptionPL;
+    }
+
+    private async Task UpdateJob()
+    {
+        Job j = new Job
+        {
+            Id = jobBeingEdited,
+            TitleEN = usingJob.TitleEN,
+            TitlePL = usingJob.TitlePL,
+            DescriptionEN = usingJob.DescriptionEN,
+            DescriptionPL = usingJob.DescriptionPL,
+        };
+
+        string sql = "UPDATE job SET titleEN = @TitleEN, titlePL = @TitlePL, descriptionEN = @DescriptionEN, descriptionPL = @DescriptionPL WHERE Id=@Id;";
+        await _data.SaveData(sql, j, _config.GetConnectionString("MySqlConnection"));
+        await OnInitializedAsync();
+        j = new Job();
+        usingJob = new Job();
+
+        createStatus = true;
+        editStatus = false;
+    }
+}

@@ -1,0 +1,51 @@
+﻿@page "/"
+
+@using DataAccess
+@using MargheritaPub.Data
+
+@inject IMySQLDataAccess _data
+@inject IConfiguration _config
+
+<PageTitle>Margherita Pub</PageTitle>
+
+<h3>Podstawowe informacje:</h3>
+
+<table class="table">
+    <tbody>
+        <tr>
+            <td>Liczba zamówień czekających na realizację:</td>
+            <td>@numberOfOrders</td>
+        </tr>
+        <tr>
+            <td>Liczba pozycji w menu:</td>
+            <td>@numberOfMenuItems</td>
+        </tr>
+        <tr>
+            <td>Liczba aktualnych ofert pracy:</td>
+            <td>@numberOfJobOffers</td>
+        </tr>
+    </tbody>
+</table>
+
+@code {
+    int numberOfOrders = 0;
+    int numberOfMenuItems = 0;
+    int numberOfJobOffers = 0;
+
+    List<Dish> dishes;
+    List<Job> jobs;
+    List<Workorder> workorders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string sql = "SELECT * FROM dish";
+        dishes = await _data.LoadData<Dish, dynamic>(sql, new { }, _config.GetConnectionString("MySQLConnection"));
+        numberOfMenuItems = dishes.Count;
+        sql = "SELECT * FROM job";
+        jobs = await _data.LoadData<Job, dynamic>(sql, new { }, _config.GetConnectionString("MySQLConnection"));
+        numberOfJobOffers = jobs.Count;
+        sql = "SELECT * FROM workorder";
+        workorders = await _data.LoadData<Workorder, dynamic>(sql, new { }, _config.GetConnectionString("MySQLConnection"));
+        numberOfOrders = workorders.Count;
+    }
+}

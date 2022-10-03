@@ -1,0 +1,285 @@
+﻿@page "/menu"
+
+@using DataAccess
+@using MargheritaPub.Data
+
+@inject IMySQLDataAccess _data
+@inject IConfiguration _config
+
+
+<div class="container">
+
+    <h3>Menu</h3>
+
+    <section>
+        @if (dishes == null)
+        {
+            <p><em>Aktualnie nie istnieją żadne pozycje w menu</em></p>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead style="background-color:#141e5e; color:white;">
+                <th></th>
+                <th>Nazwa</th>
+                <th>Opis</th>
+                <th>Ceny - mała</th>
+                <th>Ceny - średnia</th>
+                <th>Ceny - duża</th>
+                <th>Kategoria</th>
+                <th>Akcje</th>
+                </thead>
+                <tbody>
+                    @foreach (var d in dishes)
+                    {
+                        <tr>
+                            <td>PL</td>
+                            <td>@d.NamePL</td>
+                            <td>@d.DescriptionPL</td>
+                            <td rowspan="2">@d.PriceS</td>
+                            <td rowspan="2">@d.PriceN</td>
+                            <td rowspan="2">@d.PriceL</td>
+                            <td>@d.CategoryPL</td>
+                            <td rowspan="2">
+                                <span id="deleteDish" class="oi oi-x align-content-xl-around me-3" @onclick="() => DeleteDish(d.Id)" style="cursor: pointer;"></span>
+                                <span id="editDish" class="oi oi-pencil" @onclick="() => EditDish(d.Id)" style="cursor: pointer;"></span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>EN</td>
+                            <td>@d.NameEN</td>
+                            <td>@d.DescriptionEN</td>
+                            <td>@d.CategoryEN</td>
+                        </tr>
+                        
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    <section>
+        @if (createStatus)
+        {
+            <hr />
+            <h3>Dodaj pozycje do menu</h3>
+            <EditForm Model="@usingDish" OnValidSubmit="@InsertDish">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="mb-3">
+                    <label for="nameEN" class="form-label">Nazwa po angielsku</label>
+                    <input type="text" class="form-control" id="nameEN" @bind-value="usingDish.NameEN" required>
+                </div>
+                <div class="mb-3">
+                    <label for="namePL" class="form-label">Nazwa po polsku</label>
+                    <input type="text" class="form-control" id="namePL" @bind-value="usingDish.NamePL" required>
+                </div>
+                <div class="mb-3">
+                    <label for="DescriptionEN" class="form-label">Opis po angielsku</label>
+                    <input type="text" class="form-control" id="DescriptionEN" @bind-value="usingDish.DescriptionEN" required>
+                </div>
+                <div class="mb-3">
+                    <label for="DescriptionPL" class="form-label">Opis po polsku</label>
+                    <input type="text" class="form-control" id="DescriptionEN" @bind-value="usingDish.DescriptionPL" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="PriceS" class="form-label">Cena za małą porcję</label>
+                    <input type="number" step="0.01" class="form-control" id="PriceS" @bind-value="usingDish.PriceS" required>
+                </div>
+                <div class="mb-3">
+                    <label for="PriceN" class="form-label">Cena za średnią porcję</label>
+                    <input type="number" step="0.01" class="form-control" id="PriceN" @bind-value="usingDish.PriceN" required>
+                </div>
+                <div class="mb-3">
+                    <label for="PriceL" class="form-label">Cena za dużą porcję</label>
+                    <input type="number" step="0.01" class="form-control" id="PriceL" @bind-value="usingDish.PriceL" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="Photo" class="form-label">Zdjęcie</label>
+                    <input type="text" class="form-control" id="Photo" @bind-value="usingDish.Photo" required>
+                </div>
+                <div class="mb-3">
+                    <label for="CategoryEN" class="form-label">Kategoria po angielsku</label>
+                    <input type="text" class="form-control" id="CategoryEN" @bind-value="usingDish.CategoryEN" required>
+                </div>
+                <div class="mb-3">
+                    <label for="CategoryPL" class="form-label">Kategoria po polsku</label>
+                    <input type="text" class="form-control" id="CategoryPL" @bind-value="usingDish.CategoryPL" required>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn alert-primary mt-3">Dodaj</button>
+                </div>
+            </EditForm>
+        }
+    </section>
+
+    <section>
+        @if (editStatus)
+        {
+            <hr />
+            <h3>Edytuj pozycję w menu</h3>
+            <EditForm Model="@usingDish" OnValidSubmit="@UpdateDish">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="mb-3">
+                    <label for="nameEN" class="form-label">Nazwa po angielsku</label>
+                    <input type="text" class="form-control" id="nameEN" @bind-value="usingDish.NameEN">
+                </div>
+                <div class="mb-3">
+                    <label for="namePL" class="form-label">Nazwa po polsku</label>
+                    <input type="text" class="form-control" id="namePL" @bind-value="usingDish.NamePL">
+                </div>
+                <div class="mb-3">
+                    <label for="DescriptionEN" class="form-label">Opis po angielsku</label>
+                    <input type="text" class="form-control" id="DescriptionEN" @bind-value="usingDish.DescriptionEN">
+                </div>
+                <div class="mb-3">
+                    <label for="DescriptionPL" class="form-label">Opis po polsku</label>
+                    <input type="text" class="form-control" id="DescriptionEN" @bind-value="usingDish.DescriptionPL">
+                </div>
+
+                <div class="mb-3">
+                    <label for="PriceS" class="form-label">Cena za małą porcję</label>
+                    <input type="number" step="0.01" class="form-control" id="PriceS" @bind-value="usingDish.PriceS">
+                </div>
+                <div class="mb-3">
+                    <label for="PriceN" class="form-label">Cena za średnią porcję</label>
+                    <input type="number" step="0.01" class="form-control" id="PriceN" @bind-value="usingDish.PriceN">
+                </div>
+                <div class="mb-3">
+                    <label for="PriceL" class="form-label">Cena za dużą porcję</label>
+                    <input type="number" step="0.01" class="form-control" id="PriceL" @bind-value="usingDish.PriceL">
+                </div>
+
+                <div class="mb-3">
+                    <label for="Photo" class="form-label">Zdjęcie</label>
+                    <input type="text" class="form-control" id="Photo" @bind-value="usingDish.Photo">
+                </div>
+                <div class="mb-3">
+                    <label for="CategoryEN" class="form-label">Kategoria po angielsku</label>
+                    <input type="text" class="form-control" id="CategoryEN" @bind-value="usingDish.CategoryEN">
+                </div>
+                <div class="mb-3">
+                    <label for="CategoryPL" class="form-label">Kategoria po polsku</label>
+                    <input type="text" class="form-control" id="CategoryPL" @bind-value="usingDish.CategoryPL">
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn alert-primary mt-3">Edytuj</button>
+                </div>
+            </EditForm>
+        }
+    </section>
+    <br />
+</div>
+
+@code {
+    bool createStatus = true;
+    bool editStatus = false;
+
+    string dbErrorMessage = ""; // error message for db delete exception
+
+    int dishBeingEdited;
+
+    List<Dish> dishes;
+    List<Dish> selectedDish;
+
+    private Dish usingDish = new Dish();
+
+    protected override async Task OnInitializedAsync()
+    {
+        string sql = "SELECT * FROM dish";
+        dishes = await _data.LoadData<Dish, dynamic>(sql, new { }, _config.GetConnectionString("MySQLConnection"));
+    }
+
+    private async Task InsertDish()
+    {
+        Dish d = new Dish
+        {
+            NameEN = usingDish.NameEN,
+            NamePL = usingDish.NamePL,
+            DescriptionEN = usingDish.DescriptionEN,
+            DescriptionPL = usingDish.DescriptionPL,
+            PriceS = usingDish.PriceS,
+            PriceN = usingDish.PriceN,
+            PriceL = usingDish.PriceL,
+            Photo = usingDish.Photo,
+            CategoryEN = usingDish.CategoryEN,
+            CategoryPL = usingDish.CategoryPL
+        };
+
+        string sql = "INSERT INTO dish (nameEN, namePL, descriptionEN, descriptionPL, priceS, priceN, priceL, photo, categoryEN, categoryPL) VALUES (@NameEN, @NamePL, @DescriptionEN, @DescriptionPL, @PriceS, @PriceN, @PriceL, @Photo, @CategoryEN, @CategoryPL);";
+        await _data.SaveData(sql, d, _config.GetConnectionString("MySqlConnection"));
+        await OnInitializedAsync();
+        d = new Dish();
+        usingDish = new Dish();
+    }
+
+
+
+    private async Task DeleteDish(int id)
+    {
+        string sql = "DELETE FROM dish WHERE id = @Id";
+        try
+        {
+            await _data.SaveData(sql, new { id = id }, _config.GetConnectionString("MySqlConnection"));
+            await OnInitializedAsync();
+        }
+        catch(Exception ex)
+        {
+            dbErrorMessage = ex.ToString();
+        }
+    }
+
+    private async Task EditDish(int id)
+    {
+        createStatus = false;
+        editStatus = true;
+
+        string sql = "SELECT * FROM dish WHERE Id = @Id";
+        selectedDish = await _data.LoadData<Dish, dynamic>(sql, new { Id = id }, _config.GetConnectionString("MySQLConnection"));
+        dishBeingEdited = id;
+
+        usingDish.NameEN = selectedDish[0].NameEN;
+        usingDish.NamePL = selectedDish[0].NamePL;
+        usingDish.DescriptionEN = selectedDish[0].DescriptionEN;
+        usingDish.DescriptionPL = selectedDish[0].DescriptionPL;
+        usingDish.PriceS = selectedDish[0].PriceS;
+        usingDish.PriceN = selectedDish[0].PriceN;
+        usingDish.PriceL = selectedDish[0].PriceL;
+        usingDish.Photo = selectedDish[0].Photo;
+        usingDish.CategoryEN = selectedDish[0].CategoryEN;
+        usingDish.CategoryPL = selectedDish[0].CategoryPL;
+    }
+
+    private async Task UpdateDish()
+    {
+        Dish d = new Dish
+        {
+            Id = dishBeingEdited,
+            NameEN = usingDish.NameEN,
+            NamePL = usingDish.NamePL,
+            DescriptionEN = usingDish.DescriptionEN,
+            DescriptionPL = usingDish.DescriptionPL,
+            PriceS = usingDish.PriceS,
+            PriceN = usingDish.PriceN,
+            PriceL = usingDish.PriceL,
+            Photo = usingDish.Photo,
+            CategoryEN = usingDish.CategoryEN,
+            CategoryPL = usingDish.CategoryPL
+        };
+
+        string sql = "UPDATE dish SET nameEN = @NameEN, namePL = @NamePL, descriptionEN = @DescriptionEN, descriptionPL = @DescriptionPL, priceS = @PriceS, priceN = @PriceN, priceL = @PriceL, photo = @Photo, categoryEN = @CategoryEN, categoryPL = @CategoryPL WHERE Id=@Id;";
+        await _data.SaveData(sql, d, _config.GetConnectionString("MySqlConnection"));
+        await OnInitializedAsync();
+        d = new Dish();
+        usingDish = new Dish();
+
+        createStatus = true;
+        editStatus = false;
+    }
+}
